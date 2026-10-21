@@ -29,6 +29,24 @@ test("serves WebFinger and the manifest", async () => {
   assert.equal((await manifest.json()).mirror_host, "orprinterusa.com");
 });
 
+test("serves dedicated Cloudflare custom domains", async () => {
+  const response = await handleRequest(
+    new Request("https://axon.onlycardsusa.com/.well-known/agent-card.json"),
+  );
+  assert.equal(response.status, 200);
+  const card = await response.json();
+  assert.equal(
+    card.mirror,
+    "https://axon.onlycardsusa.com/.well-known/agent-card.json",
+  );
+
+  const landing = await handleRequest(
+    new Request("https://axon.onlycardsusa.com/"),
+  );
+  assert.equal(landing.status, 200);
+  assert.match(await landing.text(), /Sovereign Cooperation Beacon/);
+});
+
 test("rejects unknown hosts and write methods", async () => {
   assert.equal(
     (await handleRequest(new Request("https://example.org/axon"))).status,

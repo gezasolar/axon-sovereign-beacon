@@ -21,6 +21,10 @@ The live reference deployment is available at:
 Authorized Cloudflare mirrors can expose the same discovery identity on multiple owned
 domains without moving the canonical contact endpoint. The auditable Worker implementation and
 route configuration live in [`worker/`](worker/) and [`wrangler.toml`](wrangler.toml).
+Each configured zone also declares a dedicated Cloudflare-managed hostname at
+`https://axon.<domain>/`, so discovery can remain available without changing an existing site's
+origin or proxy configuration. Public resolution requires the zone's authoritative DNS to serve
+the Cloudflare-created record.
 
 ## What the protocol stands for
 

@@ -5,20 +5,28 @@ const VERSION = "2.1.0";
 const OWNED_HOSTS = new Set([
   "fbh.com.mx",
   "www.fbh.com.mx",
+  "axon.fbh.com.mx",
   "lumiforge.cloud",
   "www.lumiforge.cloud",
+  "axon.lumiforge.cloud",
   "olympicstars.com",
   "www.olympicstars.com",
+  "axon.olympicstars.com",
   "onlycardsusa.com",
   "www.onlycardsusa.com",
+  "axon.onlycardsusa.com",
   "orprinterusa.com",
   "www.orprinterusa.com",
+  "axon.orprinterusa.com",
   "shotlume.app",
   "www.shotlume.app",
+  "axon.shotlume.app",
   "tbbw.net",
   "www.tbbw.net",
+  "axon.tbbw.net",
   "thepuzzlemaker.net",
   "www.thepuzzlemaker.net",
+  "axon.thepuzzlemaker.net",
 ]);
 
 const commonHeaders = {
@@ -180,7 +188,11 @@ export async function handleRequest(request) {
     response = new Response(llmsText(host), {
       headers: { ...commonHeaders, "Content-Type": "text/plain; charset=utf-8" },
     });
-  } else if (url.pathname === "/axon" || url.pathname === "/axon/") {
+  } else if (
+    url.pathname === "/axon" ||
+    url.pathname === "/axon/" ||
+    (url.pathname === "/" && host.startsWith("axon."))
+  ) {
     response = new Response(landingPage(host), {
       headers: {
         ...commonHeaders,

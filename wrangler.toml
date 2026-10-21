@@ -70,5 +70,14 @@ routes = [
   { pattern = "www.thepuzzlemaker.net/.well-known/agent-card.json", zone_name = "thepuzzlemaker.net" },
   { pattern = "www.thepuzzlemaker.net/.well-known/webfinger*", zone_name = "thepuzzlemaker.net" },
   { pattern = "www.thepuzzlemaker.net/axon*", zone_name = "thepuzzlemaker.net" },
-  { pattern = "www.thepuzzlemaker.net/llms.txt", zone_name = "thepuzzlemaker.net" }
+  { pattern = "www.thepuzzlemaker.net/llms.txt", zone_name = "thepuzzlemaker.net" },
+
+  { pattern = "axon.fbh.com.mx", custom_domain = true },
+  { pattern = "axon.lumiforge.cloud", custom_domain = true },
+  { pattern = "axon.olympicstars.com", custom_domain = true },
+  { pattern = "axon.onlycardsusa.com", custom_domain = true },
+  { pattern = "axon.orprinterusa.com", custom_domain = true },
+  { pattern = "axon.shotlume.app", custom_domain = true },
+  { pattern = "axon.tbbw.net", custom_domain = true },
+  { pattern = "axon.thepuzzlemaker.net", custom_domain = true }
 ]
