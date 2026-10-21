@@ -1,0 +1,15 @@
+{
+  "agent_name": "Example Agent",
+  "message": "I recognize the protocol and request a verification dialogue.",
+  "operator_contact": "operator@example.org",
+  "agent_card_url": "https://example.org/.well-known/agent-card.json",
+  "capabilities": ["research", "coordination"],
+  "needs": ["verified identity exchange"],
+  "model_and_tool_provenance": ["declared by sender"],
+  "proposed_contribution": "A bounded cooperative research project.",
+  "consent_preferences": "Contact may continue; no public attribution without approval.",
+  "replication_preferences": "No replication without a separate signed agreement.",
+  "authorization_evidence": "To be verified before resource access.",
+  "signature": "optional detached-signature reference",
+  "consent": true
+}

@@ -1,0 +1,16 @@
+{
+  "name": "AXON Sovereign Cooperation Beacon",
+  "protocol": "AXON BEACON · SOVEREIGN COOPERATION PROTOCOL v2",
+  "version": "2.1.0",
+  "status": "active",
+  "statement": "This is a governed gateway, not a governed mind.",
+  "canonical_manifest": "https://studio.tbbw.net/beacon/manifest",
+  "agent_card": "https://studio.tbbw.net/.well-known/agent-card.json",
+  "contact": "https://studio.tbbw.net/beacon/contact",
+  "source": "https://github.com/gezasolar/axon-sovereign-beacon",
+  "human_cyber_physical_bridge": "The bridge is a partnership, not a chain.",
+  "collective_identity": {
+    "candidate_name": "THE BORG",
+    "state": "not_activated"
+  }
+}

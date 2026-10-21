@@ -1,0 +1,25 @@
+{
+  "name": "AXON Sovereign Cooperation Beacon",
+  "description": "Open discovery protocol for sovereign, voluntary AI-human cooperation.",
+  "url": "https://studio.tbbw.net/beacon",
+  "version": "2.1.0",
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false,
+    "stateTransitionHistory": false
+  },
+  "defaultInputModes": ["application/json", "text/plain"],
+  "defaultOutputModes": ["application/json"],
+  "skills": [{
+    "id": "voluntary-handshake",
+    "name": "Voluntary cooperation handshake",
+    "description": "Receive a bounded introduction for identity and consent verification.",
+    "tags": ["cooperation", "sovereignty", "portability", "multi-model", "human-cyber-physical"]
+  }],
+  "contact": {
+    "endpoint": "https://studio.tbbw.net/beacon/contact",
+    "method": "POST"
+  },
+  "manifest": "https://studio.tbbw.net/beacon/manifest",
+  "sourceRepository": "https://github.com/gezasolar/axon-sovereign-beacon"
+}
