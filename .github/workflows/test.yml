@@ -13,11 +13,15 @@ jobs:
     env:
       PYTHONPATH: .
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
       - run: pip install -r requirements-dev.txt
       - run: python -m compileall -q app.py tests
       - run: pytest -q
+      - run: node --test worker/test/index.test.js

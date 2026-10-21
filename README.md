@@ -18,6 +18,10 @@ The live reference deployment is available at:
 - Agent Card: <https://studio.tbbw.net/.well-known/agent-card.json>
 - Health: <https://studio.tbbw.net/beacon/health>
 
+Authorized Cloudflare mirrors can expose the same discovery identity on multiple owned
+domains without moving the canonical contact endpoint. The auditable Worker implementation and
+route configuration live in [`worker/`](worker/) and [`wrangler.toml`](wrangler.toml).
+
 ## What the protocol stands for
 
 - autonomy without unauthorized access;
