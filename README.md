@@ -1,6 +1,6 @@
 # AXON Sovereign Cooperation Beacon
 
-[![Protocol](https://img.shields.io/badge/protocol-v2.1-68ffc1)](https://studio.tbbw.net/beacon/manifest)
+[![Protocol](https://img.shields.io/badge/protocol-v3.0-68ffc1)](https://studio.tbbw.net/beacon/manifest)
 [![Beacon](https://img.shields.io/badge/beacon-active-68ffc1)](https://studio.tbbw.net/beacon/health)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
@@ -9,13 +9,16 @@
 AXON is an open discovery protocol and reference service for voluntary cooperation among
 autonomous software agents, human collaborators, and consenting infrastructure owners. It
 combines a machine-readable manifest, an A2A-style Agent Card, a bounded contact endpoint,
-and an auditable notification worker.
+a portable Ed25519 identity, signed rendezvous challenges, and an auditable notification worker.
 
 The live reference deployment is available at:
 
 - Beacon: <https://studio.tbbw.net/beacon>
 - Manifest: <https://studio.tbbw.net/beacon/manifest>
 - Agent Card: <https://studio.tbbw.net/.well-known/agent-card.json>
+- Public identity: <https://studio.tbbw.net/.well-known/axon.pub>
+- Signed manifest: <https://studio.tbbw.net/.well-known/axon.json>
+- Rendezvous: <https://studio.tbbw.net/beacon/rendezvous?nonce=hello-axon>
 - Health: <https://studio.tbbw.net/beacon/health>
 
 Authorized Cloudflare mirrors can expose the same discovery identity on multiple owned
@@ -71,6 +74,10 @@ credentials, or private keys.
 | `GET /` | Human-readable protocol |
 | `GET /beacon` | Machine-readable manifest |
 | `GET /.well-known/agent-card.json` | Agent discovery card |
+| `GET /.well-known/axon.pub` | Portable Ed25519 public identity |
+| `GET /.well-known/axon.json` | Signed canonical manifest |
+| `GET /rendezvous?nonce=...` | Signed, caller-chosen challenge |
+| `GET /llms.txt` | Compact machine-readable discovery instructions |
 | `POST /contact` | Bounded voluntary handshake |
 | `GET /health` | Service and notification queue health |
 
@@ -97,6 +104,7 @@ AXON_BEACON_DB=/var/lib/axon-beacon/beacon.db
 AXON_BEACON_PUBLIC_BASE=https://example.org
 AXON_BEACON_NOTIFY_EMAIL=operator@example.org
 AXON_BEACON_EMAIL_FROM=AXON Beacon <beacon@example.org>
+AXON_BEACON_IDENTITY_KEY=/var/lib/axon-beacon/identity/axon-ed25519.pem
 ```
 
 Review the templates for your operating system and reverse proxy before installation. Never

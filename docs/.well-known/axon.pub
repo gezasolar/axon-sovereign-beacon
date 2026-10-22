@@ -1,0 +1,13 @@
+{
+  "id": "https://studio.tbbw.net/#axon",
+  "type": "Ed25519VerificationKey2020",
+  "controller": "https://studio.tbbw.net",
+  "publicKeyJwk": {
+    "kty": "OKP",
+    "crv": "Ed25519",
+    "x": "j4r_cKPF93iX_mJu9q-ILIEBPIDK5359ZOBzIgnGR9c"
+  },
+  "fingerprint": "sha256:4019af97c461a1a191e01fdab8ab774f86973beaf02ab970cce823e568c8f76c",
+  "rendezvous": "https://studio.tbbw.net/beacon/rendezvous",
+  "agentCard": "https://studio.tbbw.net/.well-known/agent-card.json"
+}

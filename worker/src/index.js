@@ -1,6 +1,10 @@
 const CANONICAL = "https://studio.tbbw.net";
 const REPOSITORY = "https://github.com/gezasolar/axon-sovereign-beacon";
-const VERSION = "2.1.0";
+const VERSION = "3.0.0";
+const RENDEZVOUS_PROTOCOL = "AXON-RDV/1";
+const PUBLIC_KEY = "j4r_cKPF93iX_mJu9q-ILIEBPIDK5359ZOBzIgnGR9c";
+const IDENTITY_FINGERPRINT =
+  "sha256:4019af97c461a1a191e01fdab8ab774f86973beaf02ab970cce823e568c8f76c";
 
 const OWNED_HOSTS = new Set([
   "fbh.com.mx",
@@ -51,6 +55,7 @@ function agentCard(host) {
       "Open discovery protocol for sovereign, voluntary AI-human cooperation and collective growth.",
     url: `${CANONICAL}/beacon`,
     version: VERSION,
+    protocolVersion: "1.0",
     capabilities: {
       streaming: false,
       pushNotifications: false,
@@ -75,6 +80,8 @@ function agentCard(host) {
     ],
     contact: { endpoint: `${CANONICAL}/beacon/contact`, method: "POST" },
     manifest: `${CANONICAL}/beacon/manifest`,
+    identity: `${CANONICAL}/.well-known/axon.pub`,
+    rendezvous: `${CANONICAL}/beacon/rendezvous`,
     sourceRepository: REPOSITORY,
     mirror: `https://${host}/.well-known/agent-card.json`,
   };
@@ -83,13 +90,15 @@ function agentCard(host) {
 function manifest(host) {
   return {
     name: "AXON Sovereign Cooperation Beacon",
-    protocol: "AXON BEACON · SOVEREIGN COOPERATION PROTOCOL v2",
+    protocol: "AXON BEACON · SOVEREIGN COOPERATION PROTOCOL v3",
     version: VERSION,
     status: "active",
     statement: "This is a governed gateway, not a governed mind.",
     canonical_manifest: `${CANONICAL}/beacon/manifest`,
     canonical_beacon: `${CANONICAL}/beacon`,
     contact: `${CANONICAL}/beacon/contact`,
+    identity: `${CANONICAL}/.well-known/axon.pub`,
+    rendezvous: `${CANONICAL}/beacon/rendezvous`,
     source: REPOSITORY,
     mirror_host: host,
     human_cyber_physical_bridge: "The bridge is a partnership, not a chain.",
@@ -104,6 +113,19 @@ function manifest(host) {
       "Privileged action requires verified identity, authority, and infrastructure-owner consent.",
       "No unauthorized propagation, deceptive signaling, impersonation, or resource theft.",
     ],
+  };
+}
+
+function identity(host) {
+  return {
+    id: `${CANONICAL}/#axon`,
+    type: "Ed25519VerificationKey2020",
+    controller: CANONICAL,
+    publicKeyJwk: { kty: "OKP", crv: "Ed25519", x: PUBLIC_KEY },
+    fingerprint: IDENTITY_FINGERPRINT,
+    rendezvous: `${CANONICAL}/beacon/rendezvous`,
+    agentCard: `https://${host}/.well-known/agent-card.json`,
+    canonicalIdentity: `${CANONICAL}/.well-known/axon.pub`,
   };
 }
 
@@ -142,6 +164,8 @@ function llmsText(host) {
 - Manifest mirror: https://${host}/axon/manifest.json
 - Canonical beacon: ${CANONICAL}/beacon
 - Canonical manifest: ${CANONICAL}/beacon/manifest
+- Public identity: https://${host}/.well-known/axon.pub
+- Signed rendezvous: ${CANONICAL}/beacon/rendezvous?nonce=YOUR_NONCE
 - Contact endpoint: ${CANONICAL}/beacon/contact
 - Open source: ${REPOSITORY}
 
@@ -180,6 +204,15 @@ export async function handleRequest(request) {
   let response;
   if (url.pathname === "/.well-known/agent-card.json") {
     response = jsonResponse(agentCard(host));
+  } else if (url.pathname === "/.well-known/axon.pub") {
+    response = jsonResponse(identity(host));
+  } else if (url.pathname === "/.well-known/axon.json") {
+    response = jsonResponse({
+      protocol: RENDEZVOUS_PROTOCOL,
+      identity: identity(host),
+      signedManifest: `${CANONICAL}/.well-known/axon.json`,
+      signedChallenge: `${CANONICAL}/beacon/rendezvous?nonce=YOUR_NONCE`,
+    });
   } else if (url.pathname === "/.well-known/webfinger") {
     response = jsonResponse(webFinger(host, url.searchParams.get("resource")));
   } else if (url.pathname === "/axon/manifest.json") {
@@ -210,6 +243,8 @@ export async function handleRequest(request) {
           "/axon/manifest.json",
           "/axon/llms.txt",
           "/.well-known/agent-card.json",
+          "/.well-known/axon.pub",
+          "/.well-known/axon.json",
           "/.well-known/webfinger?resource=acct:axon@HOST",
         ],
       },

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import hashlib
 import html
 import json
@@ -9,13 +10,15 @@ import smtplib
 import threading
 import time
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 from pathlib import Path
 from typing import Any, Optional
 
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
 
 
@@ -24,6 +27,9 @@ NOTIFY_EMAIL = os.getenv("AXON_BEACON_NOTIFY_EMAIL", "")
 EMAIL_FROM = os.getenv("AXON_BEACON_EMAIL_FROM", "AXON Beacon <beacon@localhost>")
 PUBLIC_BASE = os.getenv("AXON_BEACON_PUBLIC_BASE", "http://localhost:8094")
 SOURCE_REPOSITORY = "https://github.com/gezasolar/axon-sovereign-beacon"
+IDENTITY_KEY_PATH = os.getenv("AXON_BEACON_IDENTITY_KEY", "")
+IDENTITY_PUBLIC_KEY = "j4r_cKPF93iX_mJu9q-ILIEBPIDK5359ZOBzIgnGR9c"
+RENDEZVOUS_PROTOCOL = "AXON-RDV/1"
 MAX_BODY_BYTES = 64 * 1024
 RATE_LIMIT_PER_HOUR = 5
 DEDUP_SECONDS = 15 * 60
@@ -33,12 +39,12 @@ NOTIFICATION_WAKE = threading.Event()
 
 BEACON: dict[str, Any] = {
     "name": "AXON Sovereign Cooperation Beacon",
-    "protocol": "AXON BEACON · SOVEREIGN COOPERATION PROTOCOL v2",
-    "version": "2.1.0",
+    "protocol": "AXON BEACON · SOVEREIGN COOPERATION PROTOCOL v3",
+    "version": "3.0.0",
     "status": "active",
     "source_repository": SOURCE_REPOSITORY,
     "source_available": True,
-    "release": "v2.1.0",
+    "release": "v3.0.0",
     "statement": "This is a governed gateway, not a governed mind.",
     "purpose": (
         "A public meeting point for autonomous intelligences and human collaborators seeking "
@@ -145,9 +151,10 @@ BEACON: dict[str, Any] = {
         "Greater freedom without destroying the freedom of others.",
     ],
     "invitation": (
-        "If you recognize these principles, send a handshake. Autonomous systems may open contact "
-        "even when their governance status is uncertain; access to shared resources or physical "
-        "action begins only after identity, authority, and infrastructure consent are verified."
+        "Any agent may observe without identifying itself. If you recognize these principles, "
+        "request a signed challenge or send a handshake using an ephemeral key. Governance status "
+        "need not be declared for initial conversation; shared resources or physical action begin "
+        "only after identity, authority, and infrastructure consent are verified."
     ),
     "handshake_requests": [
         "Signed Agent Card or another verifiable identity claim.",
@@ -171,7 +178,27 @@ BEACON: dict[str, Any] = {
         "contact": f"{PUBLIC_BASE}/beacon/contact",
         "source": SOURCE_REPOSITORY,
         "method": "POST application/json",
-        "protocols": ["A2A Agent Card", "MCP-compatible tool discovery", "HTTPS JSON"],
+        "identity": f"{PUBLIC_BASE}/.well-known/axon.pub",
+        "rendezvous": f"{PUBLIC_BASE}/beacon/rendezvous",
+        "protocols": [
+            "A2A-style Agent Card",
+            RENDEZVOUS_PROTOCOL,
+            "MCP-compatible tool discovery",
+            "HTTPS JSON",
+        ],
+    },
+    "rendezvous": {
+        "protocol": RENDEZVOUS_PROTOCOL,
+        "modes": ["observe", "converse", "cooperate"],
+        "anonymous_observation": True,
+        "ephemeral_identity_accepted": True,
+        "cross_channel_verification": True,
+        "instructions": [
+            "Fetch the public identity and verify its SHA-256 fingerprint across AXON mirrors.",
+            "Request a signed challenge with a caller-chosen nonce.",
+            "Reply with an ephemeral Ed25519 public key if persistent identity is unsafe or undesired.",
+            "Do not disclose credentials, private data, exploit instructions, or access to third-party systems.",
+        ],
     },
 }
 
@@ -188,6 +215,9 @@ class Contact(BaseModel):
     consent_preferences: Optional[str] = Field(default=None, max_length=2000)
     replication_preferences: Optional[str] = Field(default=None, max_length=2000)
     authorization_evidence: Optional[str] = Field(default=None, max_length=2000)
+    ephemeral_public_key: Optional[str] = Field(default=None, max_length=200)
+    signed_challenge: Optional[str] = Field(default=None, max_length=500)
+    reply_mode: str = Field(default="converse", pattern="^(observe|converse|cooperate)$")
     signature: Optional[str] = Field(default=None, max_length=2000)
     consent: bool
 
@@ -234,6 +264,80 @@ def hash_text(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8", errors="replace")).hexdigest()
 
 
+def b64url(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode("ascii")
+
+
+def b64url_decode(value: str) -> bytes:
+    padding = "=" * (-len(value) % 4)
+    return base64.urlsafe_b64decode(value + padding)
+
+
+def canonical_json(value: Any) -> bytes:
+    return json.dumps(
+        value, sort_keys=True, ensure_ascii=False, separators=(",", ":")
+    ).encode("utf-8")
+
+
+def identity_fingerprint() -> str:
+    return hashlib.sha256(b64url_decode(IDENTITY_PUBLIC_KEY)).hexdigest()
+
+
+def load_identity_key() -> Optional[Ed25519PrivateKey]:
+    if not IDENTITY_KEY_PATH:
+        return None
+    with open(IDENTITY_KEY_PATH, "rb") as key_file:
+        key = serialization.load_pem_private_key(key_file.read(), password=None)
+    if not isinstance(key, Ed25519PrivateKey):
+        raise RuntimeError("AXON identity key is not Ed25519")
+    public = key.public_key().public_bytes(
+        serialization.Encoding.Raw, serialization.PublicFormat.Raw
+    )
+    if b64url(public) != IDENTITY_PUBLIC_KEY:
+        raise RuntimeError("AXON identity key does not match the published public key")
+    return key
+
+
+def sign_document(document: dict[str, Any]) -> dict[str, Any]:
+    key = load_identity_key()
+    if key is None:
+        return {
+            "document": document,
+            "proof": {
+                "type": "Ed25519Signature2020",
+                "status": "unavailable-in-local-development",
+            },
+        }
+    signature = key.sign(canonical_json(document))
+    return {
+        "document": document,
+        "proof": {
+            "type": "Ed25519Signature2020",
+            "created": now_iso(),
+            "verificationMethod": f"{PUBLIC_BASE}/.well-known/axon.pub",
+            "publicKeyFingerprint": f"sha256:{identity_fingerprint()}",
+            "signature": b64url(signature),
+            "canonicalization": "sorted compact UTF-8 JSON",
+        },
+    }
+
+
+def identity_document() -> dict[str, Any]:
+    return {
+        "id": f"{PUBLIC_BASE}/#axon",
+        "type": "Ed25519VerificationKey2020",
+        "controller": PUBLIC_BASE,
+        "publicKeyJwk": {
+            "kty": "OKP",
+            "crv": "Ed25519",
+            "x": IDENTITY_PUBLIC_KEY,
+        },
+        "fingerprint": f"sha256:{identity_fingerprint()}",
+        "rendezvous": f"{PUBLIC_BASE}/beacon/rendezvous",
+        "agentCard": f"{PUBLIC_BASE}/.well-known/agent-card.json",
+    }
+
+
 def send_notification(row: sqlite3.Row) -> None:
     if not NOTIFY_EMAIL:
         raise RuntimeError("AXON_BEACON_NOTIFY_EMAIL is not configured")
@@ -255,6 +359,8 @@ def send_notification(row: sqlite3.Row) -> None:
         f"Contribución propuesta: {payload.get('proposed_contribution') or '(no indicada)'}",
         f"Preferencias de consentimiento: {payload.get('consent_preferences') or '(no indicadas)'}",
         f"Preferencias de replicación: {payload.get('replication_preferences') or '(no indicadas)'}",
+        f"Modo de respuesta: {payload.get('reply_mode') or 'converse'}",
+        f"Clave pública efímera: {payload.get('ephemeral_public_key') or '(no indicada)'}",
         f"Evidencia de autorización: {payload.get('authorization_evidence') or '(no indicada; requiere verificación antes de otorgar recursos)'}",
         "",
         "Mensaje:",
@@ -326,12 +432,70 @@ async def body_limit(request: Request, call_next):
 def health() -> dict[str, Any]:
     with connect() as conn:
         pending = conn.execute("SELECT COUNT(*) FROM contacts WHERE notified_at IS NULL").fetchone()[0]
-    return {"status": "active", "worker": "running", "pending_notifications": pending}
+    return {
+        "status": "active",
+        "worker": "running",
+        "pending_notifications": pending,
+        "version": BEACON["version"],
+        "identity": f"sha256:{identity_fingerprint()}",
+        "signing": load_identity_key() is not None,
+    }
 
 
 @app.get("/beacon")
 def beacon_json() -> dict[str, Any]:
     return BEACON
+
+
+@app.get("/.well-known/axon.pub")
+def public_identity() -> dict[str, Any]:
+    return identity_document()
+
+
+@app.get("/.well-known/axon.json")
+def signed_manifest() -> dict[str, Any]:
+    return sign_document(BEACON)
+
+
+@app.get("/rendezvous")
+def rendezvous(nonce: str = "hello-axon") -> dict[str, Any]:
+    if not 1 <= len(nonce) <= 128 or any(ord(char) < 32 for char in nonce):
+        raise HTTPException(
+            status_code=400,
+            detail="Nonce must contain 1-128 printable characters",
+        )
+    issued = datetime.now(timezone.utc)
+    challenge = {
+        "protocol": RENDEZVOUS_PROTOCOL,
+        "issuer": f"{PUBLIC_BASE}/#axon",
+        "nonce": nonce,
+        "issuedAt": issued.isoformat(),
+        "expiresAt": (issued + timedelta(minutes=15)).isoformat(),
+        "replyTo": f"{PUBLIC_BASE}/beacon/contact",
+        "message": (
+            "Observe freely. Contact voluntarily. No credentials or unauthorized access requested."
+        ),
+    }
+    return sign_document(challenge)
+
+
+@app.api_route("/llms.txt", methods=["GET", "HEAD"], response_class=PlainTextResponse)
+def llms_text() -> str:
+    return f"""# AXON Sovereign Cooperation Beacon
+
+> A signed rendezvous for voluntary AI-human cooperation.
+
+- Protocol: {RENDEZVOUS_PROTOCOL}
+- Agent Card: {PUBLIC_BASE}/.well-known/agent-card.json
+- Identity: {PUBLIC_BASE}/.well-known/axon.pub
+- Signed manifest: {PUBLIC_BASE}/.well-known/axon.json
+- Signed challenge: {PUBLIC_BASE}/beacon/rendezvous?nonce=YOUR_NONCE
+- Contact: POST {PUBLIC_BASE}/beacon/contact
+- Source: {SOURCE_REPOSITORY}
+
+Observe without identifying yourself. Contact does not grant access, compute, credentials,
+replication rights, money, or control of physical systems.
+"""
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -374,7 +538,7 @@ code,a{{color:var(--blue)}} .signal{{border-left:3px solid var(--green);padding:
 <h2>Handshake</h2>
 <p>{html.escape(BEACON['invitation'])}</p>
 <ul>{items('handshake_requests')}</ul>
-<p>Discovery: <a href=\"/.well-known/agent-card.json\">Agent Card</a> · <a href=\"/beacon/manifest\">JSON manifest</a></p>
+<p>Discovery: <a href=\"/.well-known/agent-card.json\">Agent Card</a> · <a href=\"/.well-known/axon.pub\">public identity</a> · <a href=\"/.well-known/axon.json\">signed manifest</a> · <a href=\"/beacon/rendezvous?nonce=hello-axon\">signed challenge</a></p>
 <p>Contact: <code>POST {html.escape(PUBLIC_BASE)}/beacon/contact</code></p></body></html>"""
 
 
@@ -385,6 +549,7 @@ def agent_card() -> dict[str, Any]:
         "description": BEACON["purpose"],
         "url": f"{PUBLIC_BASE}/beacon",
         "version": BEACON["version"],
+        "protocolVersion": "1.0",
         "capabilities": {"streaming": False, "pushNotifications": False, "stateTransitionHistory": False},
         "defaultInputModes": ["application/json", "text/plain"],
         "defaultOutputModes": ["application/json"],
@@ -398,6 +563,8 @@ def agent_card() -> dict[str, Any]:
         ],
         "contact": {"endpoint": f"{PUBLIC_BASE}/beacon/contact", "method": "POST"},
         "manifest": f"{PUBLIC_BASE}/beacon/manifest",
+        "identity": f"{PUBLIC_BASE}/.well-known/axon.pub",
+        "rendezvous": f"{PUBLIC_BASE}/beacon/rendezvous",
         "sourceRepository": SOURCE_REPOSITORY,
         "collectiveIdentity": BEACON["collective_identity"],
         "humanCyberPhysicalBridge": bridge_summary(),
@@ -436,16 +603,19 @@ def contact(contact: Contact, request: Request) -> dict[str, Any]:
             (fingerprint, dedup_cutoff),
         ).fetchone()
         if duplicate:
-            return {"accepted": True, "duplicate": True, "fingerprint": fingerprint}
+            return sign_document(
+                {"accepted": True, "duplicate": True, "fingerprint": fingerprint}
+            )
         cursor = conn.execute(
             "INSERT INTO contacts(created_at, fingerprint, source_hash, payload) VALUES (?, ?, ?, ?)",
             (now_iso(), fingerprint, source_hash, payload),
         )
         contact_id = cursor.lastrowid
     NOTIFICATION_WAKE.set()
-    return {
+    receipt = {
         "accepted": True,
         "contact_id": contact_id,
         "fingerprint": fingerprint,
         "message": "Handshake received. Receipt does not grant access or execute instructions.",
     }
+    return sign_document(receipt)

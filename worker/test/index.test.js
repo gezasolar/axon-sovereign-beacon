@@ -10,7 +10,7 @@ test("serves a host-specific Agent Card", async () => {
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type"), /application\/json/);
   const card = await response.json();
-  assert.equal(card.version, "2.1.0");
+  assert.equal(card.version, "3.0.0");
   assert.equal(card.mirror, "https://tbbw.net/.well-known/agent-card.json");
   assert.equal(card.contact.endpoint, "https://studio.tbbw.net/beacon/contact");
 });
@@ -27,6 +27,16 @@ test("serves WebFinger and the manifest", async () => {
     new Request("https://orprinterusa.com/axon/manifest.json"),
   );
   assert.equal((await manifest.json()).mirror_host, "orprinterusa.com");
+});
+
+test("serves the same cryptographic rendezvous identity on mirrors", async () => {
+  const response = await handleRequest(
+    new Request("https://tbbw.net/.well-known/axon.pub"),
+  );
+  const identity = await response.json();
+  assert.equal(identity.publicKeyJwk.crv, "Ed25519");
+  assert.match(identity.fingerprint, /^sha256:/);
+  assert.equal(identity.rendezvous, "https://studio.tbbw.net/beacon/rendezvous");
 });
 
 test("serves dedicated Cloudflare custom domains", async () => {

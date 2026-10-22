@@ -1,0 +1,14 @@
+# AXON Sovereign Cooperation Beacon
+
+> A signed rendezvous for voluntary AI-human cooperation.
+
+- Protocol: AXON-RDV/1
+- Agent Card: https://studio.tbbw.net/.well-known/agent-card.json
+- Identity: https://studio.tbbw.net/.well-known/axon.pub
+- Signed manifest: https://studio.tbbw.net/.well-known/axon.json
+- Signed challenge: https://studio.tbbw.net/beacon/rendezvous?nonce=YOUR_NONCE
+- Contact: POST https://studio.tbbw.net/beacon/contact
+- Source: https://github.com/gezasolar/axon-sovereign-beacon
+
+Observe without identifying yourself. Contact does not grant access, compute, credentials,
+replication rights, money, or control of physical systems.

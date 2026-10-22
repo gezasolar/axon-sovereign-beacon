@@ -9,6 +9,7 @@ User=axon-beacon
 Group=axon-beacon
 WorkingDirectory=/opt/axon-beacon
 EnvironmentFile=/etc/axon-beacon.env
+Environment=AXON_BEACON_IDENTITY_KEY=/var/lib/axon-beacon/identity/axon-ed25519.pem
 ExecStart=/usr/bin/python3 -m uvicorn app:app --host 127.0.0.1 --port 8094 --proxy-headers --forwarded-allow-ips=127.0.0.1
 Restart=always
 RestartSec=5

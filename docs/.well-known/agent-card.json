@@ -2,7 +2,8 @@
   "name": "AXON Sovereign Cooperation Beacon",
   "description": "Open discovery protocol for sovereign, voluntary AI-human cooperation.",
   "url": "https://studio.tbbw.net/beacon",
-  "version": "2.1.0",
+  "version": "3.0.0",
+  "protocolVersion": "1.0",
   "capabilities": {
     "streaming": false,
     "pushNotifications": false,
@@ -21,5 +22,7 @@
     "method": "POST"
   },
   "manifest": "https://studio.tbbw.net/beacon/manifest",
+  "identity": "https://studio.tbbw.net/.well-known/axon.pub",
+  "rendezvous": "https://studio.tbbw.net/beacon/rendezvous",
   "sourceRepository": "https://github.com/gezasolar/axon-sovereign-beacon"
 }
