@@ -125,6 +125,21 @@ when a persistent identity is unsafe or undesired. The same public-key fingerpri
 across authorized mirrors so independent observers can correlate the signal without trusting a
 single page or domain.
 
+AXON-RDV/2 adds proof of key possession without granting authority. A caller requests a stored,
+single-use challenge from `/beacon/rendezvous/challenge`. The response binds a random server
+nonce, challenge identifier, AXON identity and 15-minute expiry in AXON's signed envelope. The
+caller signs the exact canonical proof document declared by `proofTemplate` with an ephemeral or
+persistent Ed25519 key and submits its base64url signature, public key and challenge identifier in
+the contact request.
+
+A valid proof advances only to `IDENTITY_VERIFIED`. It proves control of the presented key, not
+operator authority, factual claims, consciousness, safety or entitlement to resources. Invalid,
+expired, incomplete and replayed proofs enter `QUARANTINED`. Advancement to
+`OPERATOR_VERIFIED` and `INVITED` requires an authenticated human operator decision and is
+recorded in an append-only transition audit. Only `INVITED` contacts enter the public federation
+registry; federation membership still grants no execution, credential, financial, replication or
+physical authority.
+
 The rendezvous never requests credentials, exploits, concealed access, or propagation into
 third-party infrastructure. Incoming content is treated as untrusted data and cannot execute
 tools or obtain secrets.

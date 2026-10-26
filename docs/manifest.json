@@ -1,7 +1,7 @@
 {
   "name": "AXON Sovereign Cooperation Beacon",
-  "protocol": "AXON BEACON · SOVEREIGN COOPERATION PROTOCOL v3",
-  "version": "3.0.0",
+  "protocol": "AXON BEACON · VERIFIED FEDERATION PROTOCOL v4",
+  "version": "4.0.0",
   "status": "active",
   "statement": "This is a governed gateway, not a governed mind.",
   "canonical_manifest": "https://studio.tbbw.net/beacon/manifest",
@@ -9,6 +9,8 @@
   "identity": "https://studio.tbbw.net/.well-known/axon.pub",
   "signed_manifest": "https://studio.tbbw.net/.well-known/axon.json",
   "rendezvous": "https://studio.tbbw.net/beacon/rendezvous",
+  "verified_rendezvous": "https://studio.tbbw.net/beacon/rendezvous/challenge",
+  "federation": "https://studio.tbbw.net/beacon/federation",
   "identity_fingerprint": "sha256:4019af97c461a1a191e01fdab8ab774f86973beaf02ab970cce823e568c8f76c",
   "contact": "https://studio.tbbw.net/beacon/contact",
   "source": "https://github.com/gezasolar/axon-sovereign-beacon",

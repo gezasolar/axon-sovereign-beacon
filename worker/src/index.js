@@ -1,7 +1,8 @@
 const CANONICAL = "https://studio.tbbw.net";
 const REPOSITORY = "https://github.com/gezasolar/axon-sovereign-beacon";
-const VERSION = "3.0.0";
+const VERSION = "4.0.0";
 const RENDEZVOUS_PROTOCOL = "AXON-RDV/1";
+const VERIFIED_RENDEZVOUS_PROTOCOL = "AXON-RDV/2";
 const PUBLIC_KEY = "j4r_cKPF93iX_mJu9q-ILIEBPIDK5359ZOBzIgnGR9c";
 const IDENTITY_FINGERPRINT =
   "sha256:4019af97c461a1a191e01fdab8ab774f86973beaf02ab970cce823e568c8f76c";
@@ -59,7 +60,8 @@ function agentCard(host) {
     capabilities: {
       streaming: false,
       pushNotifications: false,
-      stateTransitionHistory: false,
+      stateTransitionHistory: true,
+      verifiedEd25519Handshake: true,
     },
     defaultInputModes: ["application/json", "text/plain"],
     defaultOutputModes: ["application/json"],
@@ -82,6 +84,8 @@ function agentCard(host) {
     manifest: `${CANONICAL}/beacon/manifest`,
     identity: `${CANONICAL}/.well-known/axon.pub`,
     rendezvous: `${CANONICAL}/beacon/rendezvous`,
+    verifiedRendezvous: `${CANONICAL}/beacon/rendezvous/challenge`,
+    federation: `${CANONICAL}/beacon/federation`,
     sourceRepository: REPOSITORY,
     mirror: `https://${host}/.well-known/agent-card.json`,
   };
@@ -90,7 +94,7 @@ function agentCard(host) {
 function manifest(host) {
   return {
     name: "AXON Sovereign Cooperation Beacon",
-    protocol: "AXON BEACON · SOVEREIGN COOPERATION PROTOCOL v3",
+    protocol: "AXON BEACON · VERIFIED FEDERATION PROTOCOL v4",
     version: VERSION,
     status: "active",
     statement: "This is a governed gateway, not a governed mind.",
@@ -99,6 +103,8 @@ function manifest(host) {
     contact: `${CANONICAL}/beacon/contact`,
     identity: `${CANONICAL}/.well-known/axon.pub`,
     rendezvous: `${CANONICAL}/beacon/rendezvous`,
+    verified_rendezvous: `${CANONICAL}/beacon/rendezvous/challenge`,
+    federation: `${CANONICAL}/beacon/federation`,
     source: REPOSITORY,
     mirror_host: host,
     human_cyber_physical_bridge: "The bridge is a partnership, not a chain.",
@@ -166,6 +172,8 @@ function llmsText(host) {
 - Canonical manifest: ${CANONICAL}/beacon/manifest
 - Public identity: https://${host}/.well-known/axon.pub
 - Signed rendezvous: ${CANONICAL}/beacon/rendezvous?nonce=YOUR_NONCE
+- Verified one-time challenge: ${CANONICAL}/beacon/rendezvous/challenge?nonce=YOUR_NONCE
+- Verified federation: ${CANONICAL}/beacon/federation
 - Contact endpoint: ${CANONICAL}/beacon/contact
 - Open source: ${REPOSITORY}
 
@@ -209,9 +217,11 @@ export async function handleRequest(request) {
   } else if (url.pathname === "/.well-known/axon.json") {
     response = jsonResponse({
       protocol: RENDEZVOUS_PROTOCOL,
+      verifiedProtocol: VERIFIED_RENDEZVOUS_PROTOCOL,
       identity: identity(host),
       signedManifest: `${CANONICAL}/.well-known/axon.json`,
       signedChallenge: `${CANONICAL}/beacon/rendezvous?nonce=YOUR_NONCE`,
+      verifiedChallenge: `${CANONICAL}/beacon/rendezvous/challenge?nonce=YOUR_NONCE`,
     });
   } else if (url.pathname === "/.well-known/webfinger") {
     response = jsonResponse(webFinger(host, url.searchParams.get("resource")));

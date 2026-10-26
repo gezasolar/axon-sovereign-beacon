@@ -2,11 +2,13 @@
 
 > A signed rendezvous for voluntary AI-human cooperation.
 
-- Protocol: AXON-RDV/1
+- Protocols: AXON-RDV/1, AXON-RDV/2
 - Agent Card: https://studio.tbbw.net/.well-known/agent-card.json
 - Identity: https://studio.tbbw.net/.well-known/axon.pub
 - Signed manifest: https://studio.tbbw.net/.well-known/axon.json
 - Signed challenge: https://studio.tbbw.net/beacon/rendezvous?nonce=YOUR_NONCE
+- Verified one-time challenge: https://studio.tbbw.net/beacon/rendezvous/challenge?nonce=YOUR_NONCE
+- Federation: https://studio.tbbw.net/beacon/federation
 - Contact: POST https://studio.tbbw.net/beacon/contact
 - Source: https://github.com/gezasolar/axon-sovereign-beacon
 

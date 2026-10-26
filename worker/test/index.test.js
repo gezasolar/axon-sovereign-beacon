@@ -10,7 +10,12 @@ test("serves a host-specific Agent Card", async () => {
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type"), /application\/json/);
   const card = await response.json();
-  assert.equal(card.version, "3.0.0");
+  assert.equal(card.version, "4.0.0");
+  assert.equal(card.capabilities.verifiedEd25519Handshake, true);
+  assert.equal(
+    card.verifiedRendezvous,
+    "https://studio.tbbw.net/beacon/rendezvous/challenge",
+  );
   assert.equal(card.mirror, "https://tbbw.net/.well-known/agent-card.json");
   assert.equal(card.contact.endpoint, "https://studio.tbbw.net/beacon/contact");
 });
